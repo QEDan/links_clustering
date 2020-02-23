@@ -1,7 +1,11 @@
 # Links Online Clustering
 
-Implementation of the Links Online Clustering algorithm: 
+Python implementation of the Links Online Clustering algorithm: 
 https://arxiv.org/abs/1801.10123
+
+__Title__: Links: A High-Dimensional Online Clustering Method
+
+__Authors__: Philip Andrew Mansfield, Quan Wang, Carlton Downey, Li Wan, Ignacio Lopez Moreno
 
 ## Overview
 This is a clustering algorithm for online data. That is, it will predict 

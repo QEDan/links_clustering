@@ -2,6 +2,8 @@
 
 Reference: https://arxiv.org/abs/1801.10123
 """
+import logging
+
 import numpy as np
 from scipy.spatial.distance import cosine
 
@@ -23,7 +25,9 @@ class Subcluster:
         if self.centroid is None:
             self.centroid = vector
         else:
-            self.centroid = (self.n_vectors - 1) / self.n_vectors * self.centroid + vector / self.n_vectors
+            self.centroid = (self.n_vectors - 1) / \
+                            self.n_vectors * self.centroid \
+                            + vector / self.n_vectors
 
     def merge(self,
               subcluster_merge: 'Subcluster',
@@ -33,14 +37,17 @@ class Subcluster:
             self.input_vectors += subcluster_merge.input_vectors
 
         # Update centroid and n_vectors
-        self.centroid = self.n_vectors * self.centroid + subcluster_merge.n_vectors * subcluster_merge.centroid
+        self.centroid = self.n_vectors * self.centroid \
+            + subcluster_merge.n_vectors \
+            * subcluster_merge.centroid
         self.centroid /= self.n_vectors + subcluster_merge.n_vectors
         self.n_vectors += subcluster_merge.n_vectors
         try:
             subcluster_merge.connected_subclusters.remove(self)
             self.connected_subclusters.remove(subcluster_merge)
         except KeyError:
-            print("Warning: Attempted to merge unconnected subclusters. Merging anyway.")
+            logging.warning("Attempted to merge unconnected subclusters. "
+                            "Merging anyway.")
         for sc in subcluster_merge.connected_subclusters:
             sc.connected_subclusters.remove(subcluster_merge)
             if self not in sc.connected_subclusters and sc != self:
@@ -48,7 +55,6 @@ class Subcluster:
         self.connected_subclusters.update(subcluster_merge.connected_subclusters)
         if delete_merged:
             del subcluster_merge
-
 
 
 class LinksCluster:
@@ -126,8 +132,12 @@ class LinksCluster:
         cossim = 1.0 - cosine(sc1.centroid, sc2.centroid)
         threshold = self.sim_threshold(sc1.n_vectors, sc2.n_vectors)
         if cossim < threshold:
-            sc1.connected_subclusters.pop(sc2)
-            sc2.connected_subclusters.pop(sc1)
+            try:
+                sc1.connected_subclusters.remove(sc2)
+                sc2.connected_subclusters.remove(sc1)
+            except KeyError:
+                logging.warning("Attempted to update an invalid edge that didn't exist. "
+                                "Edge remains nonexistant.")
             return False
         else:
             sc1.connected_subclusters.add(sc2)
@@ -139,7 +149,8 @@ class LinksCluster:
         sc2 = self.clusters[cl_idx][sc_idx2]
         self.clusters[cl_idx][sc_idx1].merge(sc2)
         self.update_cluster(cl_idx, sc_idx1)
-        self.clusters[cl_idx] = self.clusters[cl_idx][:sc_idx2] + self.clusters[cl_idx][sc_idx2 + 1:]
+        self.clusters[cl_idx] = self.clusters[cl_idx][:sc_idx2] \
+            + self.clusters[cl_idx][sc_idx2 + 1:]
 
     def update_cluster(self, cl_idx: int, sc_idx: int):
         """Update cluster
@@ -166,7 +177,8 @@ class LinksCluster:
                 if sc == connected_sc:
                     connected_sc_idx = c_sc_idx
             if connected_sc_idx is None:
-                raise ValueError(f"Connected subcluster of {sc_idx} was not found in cluster list of {cl_idx}.")
+                raise ValueError(f"Connected subcluster of {sc_idx} "
+                                 f"was not found in cluster list of {cl_idx}.")
             cossim = 1.0 - cosine(updated_sc.centroid, connected_sc.centroid)
             if cossim >= self.subcluster_similarity_threshold:
                 self.merge_subclusters(cl_idx, sc_idx, connected_sc_idx)
@@ -178,11 +190,14 @@ class LinksCluster:
             if len(severed_sc.connected_subclusters) == 0:
                 for cluster_sc in self.clusters[cl_idx].subclusters:
                     if cluster_sc != severed_sc:
-                        cossim = 1.0 - cosine(cluster_sc.centroid, severed_sc.centroid)
-                        if cossim >= self.sim_threshold(cluster_sc.n_vectors, severed_sc.n_vectors):
+                        cossim = 1.0 - cosine(cluster_sc.centroid,
+                                              severed_sc.centroid)
+                        if cossim >= self.sim_threshold(cluster_sc.n_vectors,
+                                                        severed_sc.n_vectors):
                             self.add_edge(cluster_sc, severed_sc)
             if len(severed_sc.connected_subclusters) == 0:
-                self.clusters[cl_idx] = self.clusters[cl_idx][:severed_sc_id] + self.clusters[cl_idx][severed_sc_id + 1:]
+                self.clusters[cl_idx] = self.clusters[cl_idx][:severed_sc_id] \
+                    + self.clusters[cl_idx][severed_sc_id + 1:]
                 self.clusters.append([severed_sc])
 
     def get_all_vectors(self):
@@ -213,7 +228,8 @@ class LinksCluster:
             k: int
                 The number of vectors in a cluster or subcluster
             kp: int
-                k-prime in the paper, the number of vectors in another cluster or subcluster
+                k-prime in the paper, the number of vectors in another
+                cluster or subcluster
 
         Returns:
             float
@@ -227,6 +243,3 @@ class LinksCluster:
             / (1.0 - self.cluster_similarity_threshold ** 2) \
             * (s - self.cluster_similarity_threshold ** 2)  # eq. (24)
         return s
-
-
-
