@@ -171,7 +171,8 @@ class LinksCluster:
         """
         updated_sc = self.clusters[cl_idx][sc_idx]
         severed_subclusters = []
-        for connected_sc in updated_sc.connected_subclusters:
+        connected_scs = set(updated_sc.connected_subclusters)
+        for connected_sc in connected_scs:
             connected_sc_idx = None
             for c_sc_idx, sc in enumerate(self.clusters[cl_idx]):
                 if sc == connected_sc:
@@ -188,7 +189,7 @@ class LinksCluster:
         for severed_sc_id in severed_subclusters:
             severed_sc = self.clusters[cl_idx][severed_sc_id]
             if len(severed_sc.connected_subclusters) == 0:
-                for cluster_sc in self.clusters[cl_idx].subclusters:
+                for cluster_sc in self.clusters[cl_idx]:
                     if cluster_sc != severed_sc:
                         cossim = 1.0 - cosine(cluster_sc.centroid,
                                               severed_sc.centroid)
