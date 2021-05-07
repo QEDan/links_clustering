@@ -110,7 +110,8 @@ class LinksCluster:
                 assigned_cluster = len(self.clusters) - 1
         return assigned_cluster
 
-    def add_edge(self, sc1: Subcluster, sc2: Subcluster):
+    @staticmethod
+    def add_edge(sc1: Subcluster, sc2: Subcluster):
         """Add an edge between subclusters sc1, and sc2."""
         sc1.connected_subclusters.add(sc2)
         sc2.connected_subclusters.add(sc1)
@@ -183,9 +184,10 @@ class LinksCluster:
             cossim = 1.0 - cosine(updated_sc.centroid, connected_sc.centroid)
             if cossim >= self.subcluster_similarity_threshold:
                 self.merge_subclusters(cl_idx, sc_idx, connected_sc_idx)
-            are_connected = self.update_edge(updated_sc, connected_sc)
-            if not are_connected:
-                severed_subclusters.append(connected_sc_idx)
+            else:
+                are_connected = self.update_edge(updated_sc, connected_sc)
+                if not are_connected:
+                    severed_subclusters.append(connected_sc_idx)
         for severed_sc_id in severed_subclusters:
             severed_sc = self.clusters[cl_idx][severed_sc_id]
             if len(severed_sc.connected_subclusters) == 0:
