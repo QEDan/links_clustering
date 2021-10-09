@@ -61,7 +61,7 @@ class TestLinksCluster:
             vectors.append(vector)
             predictions.append(prediction)
         assert len(predictions) == how_many
-        assert not all([p == 0 for p in predictions])
+        assert not all(p == 0 for p in predictions)
         assert len(vectors) == len(self.cluster.get_all_vectors())
 
     def test_add_same_subcluster(self):

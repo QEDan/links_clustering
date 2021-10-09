@@ -152,6 +152,9 @@ class LinksCluster:
         self.update_cluster(cl_idx, sc_idx1)
         self.clusters[cl_idx] = self.clusters[cl_idx][:sc_idx2] \
             + self.clusters[cl_idx][sc_idx2 + 1:]
+        for sc in self.clusters[cl_idx]:
+            if sc2 in sc.connected_subclusters:
+                sc.connected_subclusters.remove(sc2)
 
     def update_cluster(self, cl_idx: int, sc_idx: int):
         """Update cluster
