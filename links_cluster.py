@@ -175,24 +175,29 @@ class LinksCluster:
         """
         updated_sc = self.clusters[cl_idx][sc_idx]
         severed_subclusters = []
-        connected_scs = set(updated_sc.connected_subclusters)
+        
+        # Capture current connections
+        connected_scs = list(updated_sc.connected_subclusters)
+        
         for connected_sc in connected_scs:
-            connected_sc_idx = None
-            for c_sc_idx, sc in enumerate(self.clusters[cl_idx]):
-                if sc == connected_sc:
-                    connected_sc_idx = c_sc_idx
-            if connected_sc_idx is None:
-                raise ValueError(f"Connected subcluster of {sc_idx} "
-                                 f"was not found in cluster list of {cl_idx}.")
+            # Check if this subcluster is still part of the cluster
+            if connected_sc not in self.clusters[cl_idx]:
+                continue
+                
+            connected_sc_idx = self.clusters[cl_idx].index(connected_sc)
+            
             cossim = 1.0 - cosine(updated_sc.centroid, connected_sc.centroid)
             if cossim >= self.subcluster_similarity_threshold:
                 self.merge_subclusters(cl_idx, sc_idx, connected_sc_idx)
             else:
                 are_connected = self.update_edge(updated_sc, connected_sc)
                 if not are_connected:
-                    severed_subclusters.append(connected_sc_idx)
-        for severed_sc_id in severed_subclusters:
-            severed_sc = self.clusters[cl_idx][severed_sc_id]
+                    severed_subclusters.append(connected_sc)
+                    
+        for severed_sc in severed_subclusters:
+            if severed_sc not in self.clusters[cl_idx]:
+                continue
+            severed_sc_idx = self.clusters[cl_idx].index(severed_sc)
             if len(severed_sc.connected_subclusters) == 0:
                 for cluster_sc in self.clusters[cl_idx]:
                     if cluster_sc != severed_sc:
@@ -202,8 +207,7 @@ class LinksCluster:
                                                         severed_sc.n_vectors):
                             self.add_edge(cluster_sc, severed_sc)
             if len(severed_sc.connected_subclusters) == 0:
-                self.clusters[cl_idx] = self.clusters[cl_idx][:severed_sc_id] \
-                    + self.clusters[cl_idx][severed_sc_id + 1:]
+                self.clusters[cl_idx].pop(severed_sc_idx)
                 self.clusters.append([severed_sc])
 
     def get_all_vectors(self):
