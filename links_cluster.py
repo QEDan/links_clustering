@@ -3,6 +3,7 @@
 Reference: https://arxiv.org/abs/1801.10123
 """
 import logging
+import pickle
 
 import numpy as np
 from scipy.spatial.distance import cosine
@@ -269,3 +270,14 @@ class LinksCluster:
             / (1.0 - self.cluster_similarity_threshold ** 2) \
             * (s - self.cluster_similarity_threshold ** 2)  # eq. (24)
         return s
+
+    def save(self, filepath: str):
+        """Save the cluster model to a file."""
+        with open(filepath, 'wb') as f:
+            pickle.dump(self, f)
+
+    @classmethod
+    def load(cls, filepath: str) -> 'LinksCluster':
+        """Load a cluster model from a file."""
+        with open(filepath, 'rb') as f:
+            return pickle.load(f)
